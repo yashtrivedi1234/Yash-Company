@@ -64,8 +64,18 @@ const serverSchema = z.object({
   CLOUDINARY_CLOUD_NAME: z.string().default(""),
   CLOUDINARY_API_KEY: z.string().default(""),
   CLOUDINARY_API_SECRET: z.string().default(""),
-  RESEND_API_KEY: z.string().default(""),
-  RESEND_FROM_EMAIL: z.string().default("Codivra Solutions <no-reply@codivrasolutions.com>"),
+  // SMTP (nodemailer). Left permissive so local development runs without a
+  // mail server — lib/mail.ts logs to the console instead of sending.
+  SMTP_HOST: z.string().default(""),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  /** true for implicit TLS on 465; false for STARTTLS on 587. */
+  SMTP_SECURE: z
+    .union([z.literal("true"), z.literal("false"), z.literal("")])
+    .default("false")
+    .transform((v) => v === "true"),
+  SMTP_USER: z.string().default(""),
+  SMTP_PASSWORD: z.string().default(""),
+  MAIL_FROM: z.string().default("Codivra Solutions <no-reply@codivrasolutions.com>"),
   SALES_NOTIFICATION_EMAIL: z.string().default("info@codivrasolutions.com"),
   UPSTASH_REDIS_REST_URL: optionalUrl,
   UPSTASH_REDIS_REST_TOKEN: z.string().default(""),

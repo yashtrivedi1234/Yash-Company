@@ -196,9 +196,11 @@ content.
 
 ### Systems not yet implemented
 
-- **Lead capture** — the `Lead` and `LeadNote` tables, schema and indexes exist;
-  the contact form, `/api/leads` route, zod validation, honeypot, reCAPTCHA v3,
-  rate limiting and Resend emails are not built.
+- **Lead capture** — the `Lead` and `LeadNote` tables exist, and
+  [`src/lib/mail.ts`](src/lib/mail.ts) is built and ready (SMTP via nodemailer,
+  with the sales notification and the autoresponder templated). Still missing:
+  the contact form UI, the `/api/leads` route, zod validation, honeypot,
+  reCAPTCHA v3 and rate limiting.
 - **Admin panel** — NextAuth v5 is installed and the `User` model with
   ADMIN/EDITOR roles is migrated, but no `(admin)` route group, CRUD, Tiptap
   editor, Cloudinary upload or SEO checklist gate exists yet.
