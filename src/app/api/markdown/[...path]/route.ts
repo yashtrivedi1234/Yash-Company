@@ -16,13 +16,19 @@ export const revalidate = 86400;
  *    rewrite's query string is not reliably readable from `request.nextUrl`
  *    inside a route handler, so a `?path=` approach silently 400s.
  */
-export async function generateStaticParams() {
-  const pages = await getAllMarkdownPages();
-  return pages.map((page) => ({
-    path: page.path.replace(/^\//, "").split("/"),
-  }));
-}
-
+/**
+ * Deliberately no `generateStaticParams`.
+ *
+ * These twins are a machine-readable surface for answer engines, not pages a
+ * person browses — they are fetched rarely and cached for 24h after the first
+ * hit. Prerendering all ~70 at build time meant every one of them resolving
+ * the full content set before the cache warmed, which stampeded the database
+ * and failed the build against Neon on a cold start.
+ *
+ * Rendering on demand with ISR gives the same result for consumers at a
+ * fraction of the build cost: the first request pays for one query, everything
+ * after it is served from cache.
+ */
 export async function GET(
   _request: Request,
   { params }: RouteContext<"/api/markdown/[...path]">,

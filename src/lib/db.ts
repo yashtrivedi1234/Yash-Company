@@ -13,24 +13,38 @@ import { PrismaClient } from "@/generated/prisma/client";
  */
 
 /**
- * `next build` fans out across one worker process per core, and each worker
- * instantiates this module with its own pool. Multiply a default-sized pool by
- * 7 workers and the connection limit is gone before the first page renders —
- * the build then dies mid-export with P1017 ConnectionClosed.
+ * Pool sizing.
  *
- * During the build each worker renders pages sequentially, so one connection
- * each is genuinely enough. At runtime a small pool is still right: on Vercel
- * every serverless instance holds its own, and the pooler is what does the
- * real multiplexing.
+ * `next build` fans out across one worker process per core, and each worker
+ * instantiates this module with its own pool — so the effective connection
+ * count is `max × workers`, not `max`.
+ *
+ * The right value depends entirely on what is on the other end:
+ *
+ *  - **A pooler (Neon/Supabase `-pooler` host):** PgBouncer multiplexes
+ *    thousands of client connections, so a healthy per-worker pool is correct.
+ *    Starving it is actively harmful — concurrent `unstable_cache`
+ *    revalidations queue behind a single connection and time out, which turned
+ *    a 0.8s build into a 61s one with 622 connection errors.
+ *  - **A direct Postgres connection:** the server's own `max_connections` is
+ *    the ceiling, and a local dev server may allow as few as 10 in total.
+ *
+ * Default to the pooled case and let a direct connection dial it down.
  */
-const isBuild = process.env.NEXT_PHASE === "phase-production-build";
+const DEFAULT_POOL_MAX = 5;
+
+const poolMax = process.env.DB_POOL_MAX
+  ? Number(process.env.DB_POOL_MAX)
+  : DEFAULT_POOL_MAX;
 
 const createClient = () => {
   const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL,
-    max: isBuild ? 1 : 3,
+    max: poolMax,
     idleTimeoutMillis: 10_000,
-    connectionTimeoutMillis: 20_000,
+    // Neon free-tier compute auto-suspends and cold-starts on the first
+    // connection, which can take several seconds.
+    connectionTimeoutMillis: 30_000,
     // Poolers drop idle connections without notice; keepalive stops the client
     // handing out an already-dead socket.
     keepAlive: true,

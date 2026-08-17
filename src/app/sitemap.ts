@@ -13,7 +13,15 @@ import {
 } from "@/lib/queries";
 import { absoluteUrl } from "@/lib/site";
 
-export const revalidate = 86400;
+/**
+ * Rendered on demand, not prerendered.
+ *
+ * The sitemap reads ten tables. Prerendering it made every build worker race
+ * that full scan, which on a small database instance exceeded 60 seconds and
+ * failed the build. Search engines fetch a sitemap infrequently, and building
+ * it per request guarantees it reflects what is actually published.
+ */
+export const dynamic = "force-dynamic";
 
 /**
  * Generated from the database, never hardcoded — a sitemap that drifts from
@@ -30,29 +38,19 @@ export const revalidate = 86400;
  * split it into a sitemap index — see SEO-CHECKLIST.md for the exact change.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [
-    services,
-    technologies,
-    industries,
-    locations,
-    moneyPages,
-    products,
-    projects,
-    posts,
-    glossary,
-    jobs,
-  ] = await Promise.all([
-    getServices(),
-    getTechnologies(),
-    getIndustries(),
-    getLocations(),
-    getMoneyPages(),
-    getProducts(),
-    getProjects(),
-    getPosts(),
-    getGlossaryTerms(),
-    getJobPostings(),
-  ]);
+  // Sequential rather than Promise.all — see the note in markdown-pages.ts.
+  // Ten parallel queries here, times seven build workers, is enough of a burst
+  // to time out a cold Neon compute and fail the build.
+  const services = await getServices();
+  const technologies = await getTechnologies();
+  const industries = await getIndustries();
+  const locations = await getLocations();
+  const moneyPages = await getMoneyPages();
+  const products = await getProducts();
+  const projects = await getProjects();
+  const posts = await getPosts();
+  const glossary = await getGlossaryTerms();
+  const jobs = await getJobPostings();
 
   const now = new Date();
 

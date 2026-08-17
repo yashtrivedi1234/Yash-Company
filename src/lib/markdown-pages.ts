@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import {
   getGlossaryTerms,
   getIndustries,
@@ -7,6 +8,7 @@ import {
   getProducts,
   getServices,
   getTechnologies,
+  TAGS,
 } from "@/lib/queries";
 import { absoluteUrl } from "@/lib/site";
 
@@ -32,18 +34,53 @@ export type MarkdownPage = {
  * navigation, no scripts and no layout noise. Shared by `/llms-full.txt` and
  * the per-page `/[...slug].md` route so the two can never disagree.
  */
-export async function getAllMarkdownPages(): Promise<MarkdownPage[]> {
-  const [services, technologies, industries, locations, moneyPages, products, posts, glossary] =
-    await Promise.all([
-      getServices(),
-      getTechnologies(),
-      getIndustries(),
-      getLocations(),
-      getMoneyPages(),
-      getProducts(),
-      getPosts(),
-      getGlossaryTerms(),
-    ]);
+/**
+ * Cached as one unit, not just as eight cached sub-queries.
+ *
+ * This function is called once per markdown-twin route, and there are ~70 of
+ * them. Relying on the individual `:list` caches meant every route raced the
+ * others before any cache populated — roughly 560 concurrent full-table
+ * queries per build worker, which produced 622 connection timeouts and turned
+ * a sub-second build into a 90-second one.
+ *
+ * One cache key over the whole composite collapses that to a single fetch per
+ * worker. It carries every content tag, so any admin edit invalidates it.
+ */
+export const getAllMarkdownPages = unstable_cache(
+  async (): Promise<MarkdownPage[]> => buildMarkdownPages(),
+  ["markdown-pages:all"],
+  {
+    tags: [
+      TAGS.services,
+      TAGS.technologies,
+      TAGS.industries,
+      TAGS.locations,
+      TAGS.moneyPages,
+      TAGS.products,
+      TAGS.posts,
+      TAGS.glossary,
+    ],
+    revalidate: 86400,
+  },
+);
+
+async function buildMarkdownPages(): Promise<MarkdownPage[]> {
+  // Sequential, not Promise.all, and deliberately so.
+  //
+  // Eight parallel queries per call, multiplied by seven build workers, is a
+  // 56-connection burst. Neon's free-tier compute auto-suspends and is slow to
+  // wake — a bare `migrate status` takes ~10s cold — so that burst times out
+  // and fails the build. Each query below is individually cached, so once warm
+  // this costs no more than the parallel version; when cold it degrades to
+  // slow rather than to broken.
+  const services = await getServices();
+  const technologies = await getTechnologies();
+  const industries = await getIndustries();
+  const locations = await getLocations();
+  const moneyPages = await getMoneyPages();
+  const products = await getProducts();
+  const posts = await getPosts();
+  const glossary = await getGlossaryTerms();
 
   return [
     ...services.map((s) => ({

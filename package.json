@@ -16,7 +16,9 @@
     "db:studio": "prisma studio",
     "check:content": "tsx scripts/check-content.ts",
     "check:orphans": "tsx scripts/check-orphans.ts",
-    "lhci": "lhci autorun"
+    "lhci": "lhci autorun",
+    "test:smtp": "tsx scripts/test-smtp.ts",
+    "db:probe": "tsx scripts/db-probe.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.8.0",

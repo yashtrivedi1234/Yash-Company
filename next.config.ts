@@ -25,6 +25,17 @@ const nextConfig: NextConfig = {
     // Tree-shakes barrel imports; lucide-react alone is ~1,500 modules
     // otherwise and blows the 180KB budget on its own.
     optimizePackageImports: ["lucide-react", "motion", "date-fns"],
+
+    // Cap build parallelism. Next defaults to one worker per core (7 here),
+    // and every worker holds its own connection pool — roughly 35 concurrent
+    // queries against the database during prerendering.
+    //
+    // Neon's free tier runs on 0.25 vCPU and auto-suspends, so that much
+    // concurrency queues past the connection timeout and fails the build.
+    // Two workers keeps the build comfortably inside what a small instance
+    // serves. Raise it once the database has real capacity — this is a
+    // constraint of the database plan, not of the site.
+    cpus: 2,
   },
 
   async headers() {

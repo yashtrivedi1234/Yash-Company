@@ -9,7 +9,18 @@ import {
 import { absoluteUrl, site } from "@/lib/site";
 import { formatINR } from "@/lib/utils";
 
-export const revalidate = 86400;
+/**
+ * Rendered on demand rather than prerendered at build time.
+ *
+ * This route reads the entire published content set. Prerendering it meant
+ * every build worker racing that full scan against the database, which on a
+ * small instance exceeds the connection timeout and fails the build.
+ *
+ * On demand is also the better design here: crawlers fetch this rarely, the
+ * response carries an s-maxage so the CDN serves repeats, and generating it
+ * per request means it can never be staler than the database.
+ */
+export const dynamic = "force-dynamic";
 
 /**
  * /llms.txt — follows the llmstxt.org spec exactly:
