@@ -18,8 +18,13 @@ export const WEBSITE_ID = `${site.url}/#website`;
  * rating is a manual-action risk, not just a soft signal.
  */
 export function RootGraph() {
-  const sameAs = [site.social.linkedin, site.social.github, site.social.gbp]
-    .filter((url): url is string => Boolean(url));
+  // Widened to string[] because `site.social` is `as const`, so its members
+  // narrow to literal types. Kept filtered so that an entry added later and
+  // left blank is omitted rather than emitted as a dead link — `sameAs`
+  // pointing nowhere works against the entity, not for it.
+  const sameAs: string[] = [site.social.linkedin, site.social.github].filter(
+    Boolean,
+  );
 
   const address = {
     "@type": "PostalAddress",

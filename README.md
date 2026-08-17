@@ -94,6 +94,24 @@ the redirect for free.
 
 ---
 
+## Deliberately not used
+
+- **Redis / Upstash.** Rate limiting is in-memory
+  ([`src/lib/rate-limit.ts`](src/lib/rate-limit.ts)). Accurate on a single
+  long-running server; on serverless each instance keeps its own counters, so a
+  determined caller can exceed the limit by a factor of the instance count. It
+  raises the cost of spamming rather than making it impossible. If abuse
+  becomes real, the answer is edge protection (Vercel WAF / Cloudflare) or a
+  shared store — not a larger in-memory map.
+- **reCAPTCHA.** Form spam defence is the honeypot field plus the rate limiter.
+- **Site-verification meta tags.** Verify Search Console and Bing by **DNS TXT
+  record** instead. It covers every subdomain, survives redeploys and layout
+  edits, and keeps a token out of the HTML of every page.
+- **Google Business Profile URL.** Not currently in `Organization.sameAs`. Add
+  it as a literal in [`src/lib/site.ts`](src/lib/site.ts) once the listing is
+  live — for a local business it is one of the strongest entity signals there
+  is, so this is worth doing.
+
 ## Architecture decisions worth knowing
 
 **Theme is applied by a blocking inline script, not by reading the cookie in
@@ -196,11 +214,11 @@ content.
 
 ### Systems not yet implemented
 
-- **Lead capture** — the `Lead` and `LeadNote` tables exist, and
-  [`src/lib/mail.ts`](src/lib/mail.ts) is built and ready (SMTP via nodemailer,
-  with the sales notification and the autoresponder templated). Still missing:
-  the contact form UI, the `/api/leads` route, zod validation, honeypot,
-  reCAPTCHA v3 and rate limiting.
+- **Lead capture** — the `Lead` and `LeadNote` tables exist,
+  [`src/lib/mail.ts`](src/lib/mail.ts) is built (SMTP via nodemailer, both
+  messages templated) and [`src/lib/rate-limit.ts`](src/lib/rate-limit.ts)
+  provides the 5-per-IP-per-hour limit. Still missing: the contact form UI, the
+  `/api/leads` route, zod validation and the honeypot field.
 - **Admin panel** — NextAuth v5 is installed and the `User` model with
   ADMIN/EDITOR roles is migrated, but no `(admin)` route group, CRUD, Tiptap
   editor, Cloudinary upload or SEO checklist gate exists yet.

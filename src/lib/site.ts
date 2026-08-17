@@ -67,13 +67,15 @@ export const site = {
 
   /**
    * Only URLs that actually resolve belong here — `sameAs` pointing at a dead
-   * profile is a trust signal working against you. Empty entries are filtered
-   * out before the Organization node is emitted.
+   * profile is a trust signal working against you.
+   *
+   * A Google Business Profile URL belongs here once the listing is live: for a
+   * local business it is one of the strongest entity signals available. Add it
+   * as a literal string when you have one.
    */
   social: {
     linkedin: "https://linkedin.com/in/yash-trivedi-contact",
     github: "https://github.com/yashtrivedi1234",
-    gbp: env.NEXT_PUBLIC_GBP_URL,
   },
 
   analytics: {

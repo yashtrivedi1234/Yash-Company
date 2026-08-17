@@ -10,8 +10,6 @@ import { z } from "zod";
  * them or crash the build.
  */
 
-const optionalUrl = z.union([z.string().url(), z.literal("")]).default("");
-
 // --- Public -----------------------------------------------------------------
 
 const publicSchema = z.object({
@@ -25,10 +23,8 @@ const publicSchema = z.object({
   NEXT_PUBLIC_EMAIL: z.string().email(),
   NEXT_PUBLIC_GA_ID: z.string().default(""),
   NEXT_PUBLIC_CLARITY_ID: z.string().default(""),
-  NEXT_PUBLIC_RECAPTCHA_SITE_KEY: z.string().default(""),
   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: z.string().default(""),
   NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: z.string().default("codivra_admin"),
-  NEXT_PUBLIC_GBP_URL: optionalUrl,
 });
 
 const parsedPublic = publicSchema.safeParse({
@@ -39,10 +35,8 @@ const parsedPublic = publicSchema.safeParse({
   NEXT_PUBLIC_EMAIL: process.env.NEXT_PUBLIC_EMAIL,
   NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID,
   NEXT_PUBLIC_CLARITY_ID: process.env.NEXT_PUBLIC_CLARITY_ID,
-  NEXT_PUBLIC_RECAPTCHA_SITE_KEY: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
-  NEXT_PUBLIC_GBP_URL: process.env.NEXT_PUBLIC_GBP_URL,
 });
 
 if (!parsedPublic.success) {
@@ -77,12 +71,6 @@ const serverSchema = z.object({
   SMTP_PASSWORD: z.string().default(""),
   MAIL_FROM: z.string().default("Codivra Solutions <no-reply@codivrasolutions.com>"),
   SALES_NOTIFICATION_EMAIL: z.string().default("info@codivrasolutions.com"),
-  UPSTASH_REDIS_REST_URL: optionalUrl,
-  UPSTASH_REDIS_REST_TOKEN: z.string().default(""),
-  RECAPTCHA_SECRET_KEY: z.string().default(""),
-  RECAPTCHA_MIN_SCORE: z.coerce.number().min(0).max(1).default(0.5),
-  GOOGLE_SITE_VERIFICATION: z.string().default(""),
-  BING_SITE_VERIFICATION: z.string().default(""),
   PREVIEW_SECRET: z.string().default("preview"),
 });
 

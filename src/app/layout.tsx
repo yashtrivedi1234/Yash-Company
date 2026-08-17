@@ -8,7 +8,6 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { WhatsAppButton } from "@/components/layout/whatsapp-button";
 import { RootGraph } from "@/components/schema/graph";
 import { ThemeScript } from "@/components/theme-script";
-import { serverEnv } from "@/lib/env";
 import { buildMetadata } from "@/lib/seo";
 import { DEFAULT_THEME } from "@/lib/theme";
 import "./globals.css";
@@ -29,23 +28,21 @@ const geistMono = Geist_Mono({
   preload: false,
 });
 
+/**
+ * No `verification` block here by design.
+ *
+ * Search Console and Bing are verified by DNS TXT record instead of a meta
+ * tag. DNS verification is strictly better: it covers every subdomain, it
+ * cannot be lost by a layout edit or a redeploy, and it keeps a build-time
+ * secret out of the HTML of every page on the site.
+ */
 export function generateMetadata(): Metadata {
-  const { GOOGLE_SITE_VERIFICATION, BING_SITE_VERIFICATION } = serverEnv();
-
-  return {
-    ...buildMetadata({
-      title: "Software & Web Development Company in Sitapur",
-      description:
-        "Codivra Solutions builds websites, mobile apps and custom software from Sitapur, Uttar Pradesh. Fixed quotes, weekly demos, code you own. Talk to an engineer, not a salesperson.",
-      path: "/",
-    }),
-    verification: {
-      ...(GOOGLE_SITE_VERIFICATION ? { google: GOOGLE_SITE_VERIFICATION } : {}),
-      ...(BING_SITE_VERIFICATION
-        ? { other: { "msvalidate.01": BING_SITE_VERIFICATION } }
-        : {}),
-    },
-  };
+  return buildMetadata({
+    title: "Software & Web Development Company in Sitapur",
+    description:
+      "Codivra Solutions builds websites, mobile apps and custom software from Sitapur, Uttar Pradesh. Fixed quotes, weekly demos, code you own. Talk to an engineer, not a salesperson.",
+    path: "/",
+  });
 }
 
 export const viewport: Viewport = {
