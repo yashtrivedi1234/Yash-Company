@@ -24,14 +24,35 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  // --- Canonical host: apex and the old domain both fold into www ----------
+  // --- Canonical host: the apex and any old domain fold into the real one --
   const canonicalHost = process.env.NEXT_PUBLIC_SITE_URL
     ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host
     : null;
 
   const isLocal = host.includes("localhost") || host.startsWith("127.0.0.1");
 
-  if (canonicalHost && !isLocal && host !== canonicalHost) {
+  // Never redirect away from a *.vercel.app host.
+  //
+  // Preview deployments and the project's own vercel.app URL are legitimate
+  // origins, and folding them into the canonical domain makes every preview
+  // unreachable — worse, if NEXT_PUBLIC_SITE_URL is misconfigured it sends
+  // real visitors somewhere that does not resolve at all.
+  const isVercelPreview = host.endsWith(".vercel.app");
+
+  // Only canonicalise when the target is a real, routable host. A localhost
+  // value here means the environment is misconfigured; redirecting to it would
+  // take the whole site down rather than surface the mistake.
+  const canonicalIsRoutable =
+    canonicalHost !== null &&
+    !canonicalHost.includes("localhost") &&
+    !canonicalHost.startsWith("127.0.0.1");
+
+  if (
+    canonicalIsRoutable &&
+    !isLocal &&
+    !isVercelPreview &&
+    host !== canonicalHost
+  ) {
     const url = request.nextUrl.clone();
     url.host = canonicalHost;
     url.protocol = "https:";
