@@ -1,0 +1,496 @@
+// Codivra Solutions — content and CRM schema.
+//
+// Prisma 7: the client is generated to src/generated/prisma and imported from
+// "@/generated/prisma", not "@prisma/client". Connection URLs live in
+// prisma.config.ts, not in this file.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Services
+// ---------------------------------------------------------------------------
+
+model Service {
+  id            String       @id @default(cuid())
+  slug          String       @unique
+  title         String
+  shortDesc     String
+  heroHeadline  String
+  /// Answer-first paragraph, 40–60 words. Rendered by <AnswerBlock>.
+  answerBlock   String       @db.Text
+  bodyMdx       String       @db.Text
+  iconName      String
+  startingPrice Int?
+  currency      String       @default("INR")
+  deliveryWeeks String?
+  /// Pricing tiers: [{name, price, priceNote, timeline, includes[], excludes[]}]
+  tiers         Json?
+  featured      Boolean      @default(false)
+  order         Int          @default(0)
+  metaTitle     String
+  metaDesc      String
+  ogImage       String?
+  faqs          Faq[]
+  projects      Project[]
+  technologies  Technology[] @relation("ServiceTech")
+  industries    Industry[]   @relation("IndustryService")
+  moneyPages    MoneyPage[]
+  published     Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([published, order])
+}
+
+// ---------------------------------------------------------------------------
+// Technologies
+// ---------------------------------------------------------------------------
+
+model Technology {
+  id        String       @id @default(cuid())
+  slug      String       @unique
+  name      String
+  category  TechCategory
+  logoUrl   String
+  /// Short answer-first summary used on the index grid and in llms.txt.
+  summary   String
+  bodyMdx   String       @db.Text
+  metaTitle String
+  metaDesc  String
+  order     Int          @default(0)
+  services  Service[]    @relation("ServiceTech")
+  projects  Project[]    @relation("ProjectTech")
+  faqs      Faq[]
+  published Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([published, order])
+}
+
+enum TechCategory {
+  FRONTEND
+  BACKEND
+  MOBILE
+  DATABASE
+  AI_ML
+  DEVOPS
+  CMS
+  DESIGN
+}
+
+// ---------------------------------------------------------------------------
+// Case studies
+// ---------------------------------------------------------------------------
+
+model Project {
+  id           String       @id @default(cuid())
+  slug         String       @unique
+  title        String
+  clientName   String?
+  clientLogo   String?
+  summary      String
+  challengeMdx String       @db.Text
+  solutionMdx  String       @db.Text
+  resultMdx    String       @db.Text
+  /// [{label:"Load time", before:"4.2s", after:"0.9s"}]
+  metrics      Json
+  coverImage   String
+  gallery      String[]
+  liveUrl      String?
+  durationWeeks Int?
+  year         Int
+  featured     Boolean      @default(false)
+  metaTitle    String
+  metaDesc     String
+
+  // Both sides of the named relation must exist or the client will not
+  // generate. `industry` is the relation, not a loose display string, so the
+  // label on a case study can never drift from the industry page it links to.
+  industryId   String?
+  industry     Industry?    @relation("IndustryProjects", fields: [industryId], references: [id], onDelete: SetNull)
+
+  services     Service[]
+  technologies Technology[] @relation("ProjectTech")
+  testimonial  Testimonial?
+  published    Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([published, featured, year])
+  @@index([industryId])
+}
+
+// ---------------------------------------------------------------------------
+// Our own products
+// ---------------------------------------------------------------------------
+
+model Product {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  tagline     String
+  /// Answer-first paragraph, 40–60 words.
+  answerBlock String   @db.Text
+  bodyMdx     String   @db.Text
+  /// [{title, description, iconName}]
+  features    Json
+  screenshots String[]
+  pricingMdx  String?  @db.Text
+  demoUrl     String?
+  order       Int      @default(0)
+  metaTitle   String
+  metaDesc    String
+  faqs        Faq[]
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([published, order])
+}
+
+// ---------------------------------------------------------------------------
+// Industries
+// ---------------------------------------------------------------------------
+
+model Industry {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  shortDesc   String
+  answerBlock String    @db.Text
+  bodyMdx     String    @db.Text
+  /// [{problem, consequence, solution}]
+  painPoints  Json
+  iconName    String    @default("Building2")
+  order       Int       @default(0)
+  metaTitle   String
+  metaDesc    String
+  projects    Project[] @relation("IndustryProjects")
+  services    Service[] @relation("IndustryService")
+  faqs        Faq[]
+  published   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([published, order])
+}
+
+// ---------------------------------------------------------------------------
+// Locations
+// ---------------------------------------------------------------------------
+
+model Location {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  city        String
+  district    String
+  state       String      @default("Uttar Pradesh")
+  isOffice    Boolean     @default(false)
+  address     String?
+  lat         Float?
+  lng         Float?
+  /// Distance and travel time from the Sitapur office, e.g. "89 km, 2h by road".
+  distanceFromOffice String?
+  answerBlock String      @db.Text
+  /// MUST be 400+ words of genuinely city-specific content. The seed asserts
+  /// this — a page that cannot clear the bar should not exist at all.
+  bodyMdx     String      @db.Text
+  /// Named local clients or projects. Null when we have none yet; the page
+  /// then omits the proof block rather than inventing one.
+  localProof  String?     @db.Text
+  metaTitle   String
+  metaDesc    String
+  order       Int         @default(0)
+  moneyPages  MoneyPage[]
+  faqs        Faq[]
+  published   Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([published, order])
+}
+
+// ---------------------------------------------------------------------------
+// High-intent [service]-company-in-[city] landing pages
+// ---------------------------------------------------------------------------
+
+model MoneyPage {
+  id          String   @id @default(cuid())
+  /// Full path segment, e.g. "web-development-company-in-sitapur".
+  slug        String   @unique
+  h1          String
+  answerBlock String   @db.Text
+  bodyMdx     String   @db.Text
+  localProof  String?  @db.Text
+  metaTitle   String
+  metaDesc    String
+
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  locationId  String
+  location    Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  faqs        Faq[]
+  priority    Float    @default(0.9)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([published])
+  @@index([serviceId, locationId])
+}
+
+// ---------------------------------------------------------------------------
+// Social proof
+// ---------------------------------------------------------------------------
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  authorName  String
+  authorRole  String
+  companyName String
+  avatarUrl   String?
+  quote       String   @db.Text
+  rating      Int      @default(5)
+  /// Link to the original public review. Without one the quote renders
+  /// unlinked — and never feeds an AggregateRating.
+  sourceUrl   String?
+  featured    Boolean  @default(false)
+  projectId   String?  @unique
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([featured])
+}
+
+// ---------------------------------------------------------------------------
+// Editorial
+// ---------------------------------------------------------------------------
+
+model Post {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  excerpt     String
+  answerBlock String    @db.Text
+  bodyMdx     String    @db.Text
+  coverImage  String
+  category    String
+  tags        String[]
+  authorId    String
+  author      Author    @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  readMinutes Int
+  metaTitle   String
+  metaDesc    String
+  faqs        Faq[]
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  /// [{date, note}] — powers the "what changed" GEO block.
+  changelog   Json?
+
+  @@index([published, publishedAt])
+  @@index([category])
+}
+
+model Author {
+  id       String  @id @default(cuid())
+  slug     String  @unique
+  name     String
+  role     String
+  /// Credentials matter for E-E-A-T; never "admin" or "team".
+  bio      String  @db.Text
+  avatar   String
+  linkedin String?
+  github   String?
+  twitter  String?
+  posts    Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// FAQs
+//
+// One table serves every page type. Each optional FK is a different owner; a
+// row with all of them null and scope="global" is a site-wide FAQ.
+// ---------------------------------------------------------------------------
+
+model Faq {
+  id           String      @id @default(cuid())
+  question     String
+  /// 50–150 words, answer-first.
+  answer       String      @db.Text
+  order        Int         @default(0)
+  scope        String      @default("global")
+
+  serviceId    String?
+  service      Service?    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  postId       String?
+  post         Post?       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  technologyId String?
+  technology   Technology? @relation(fields: [technologyId], references: [id], onDelete: Cascade)
+  industryId   String?
+  industry     Industry?   @relation(fields: [industryId], references: [id], onDelete: Cascade)
+  locationId   String?
+  location     Location?   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  productId    String?
+  product      Product?    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  moneyPageId  String?
+  moneyPage    MoneyPage?  @relation(fields: [moneyPageId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([scope, order])
+  @@index([serviceId])
+  @@index([postId])
+}
+
+// ---------------------------------------------------------------------------
+// Glossary — terms are defined on first use and linked to /glossary/[term]
+// ---------------------------------------------------------------------------
+
+model GlossaryTerm {
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  term       String
+  /// One-sentence definition, lifted directly by answer engines.
+  definition String   @db.Text
+  bodyMdx    String   @db.Text
+  metaTitle  String
+  metaDesc   String
+  published  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Careers
+// ---------------------------------------------------------------------------
+
+model JobPosting {
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  title          String
+  department     String
+  employmentType String    @default("FULL_TIME")
+  locationType   String    @default("ON_SITE")
+  city           String    @default("Sitapur")
+  descriptionMdx String    @db.Text
+  /// [string] — rendered as a list and as JobPosting.responsibilities
+  responsibilities Json
+  requirements   Json
+  salaryMin      Int?
+  salaryMax      Int?
+  salaryPeriod   String    @default("YEAR")
+  metaTitle      String
+  metaDesc       String
+  /// JobPosting schema requires an expiry; stale postings are a rich-result
+  /// violation, so this is not optional in practice.
+  validThrough   DateTime?
+  published      Boolean   @default(true)
+  postedAt       DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([published, postedAt])
+}
+
+// ---------------------------------------------------------------------------
+// CRM
+// ---------------------------------------------------------------------------
+
+model Lead {
+  id          String     @id @default(cuid())
+  name        String
+  email       String
+  phone       String
+  company     String?
+  budgetRange String?
+  timeline    String?
+  serviceSlug String?
+  message     String     @db.Text
+  sourcePage  String
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmTerm     String?
+  utmContent  String?
+  referrer    String?
+  status      LeadStatus @default(NEW)
+  /// SHA-256 of IP + a server salt. Enough to spot repeat submitters without
+  /// storing a raw IP against a named person.
+  ipHash      String?
+  /// reCAPTCHA v3 score at submission, for triaging borderline spam.
+  captchaScore Float?
+  notes       LeadNote[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+model LeadNote {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  body      String   @db.Text
+  authorId  String?
+  createdAt DateTime @default(now())
+
+  @@index([leadId, createdAt])
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL
+  WON
+  LOST
+  SPAM
+}
+
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  /// bcrypt hash. Never stores a plaintext password.
+  password  String
+  role      Role     @default(EDITOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+}
+
+// ---------------------------------------------------------------------------
+// Redirects — consumed by middleware.ts
+// ---------------------------------------------------------------------------
+
+model Redirect {
+  id        String   @id @default(cuid())
+  from      String   @unique
+  to        String
+  status    Int      @default(301)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,0 +1,373 @@
+@import "tailwindcss";
+
+/*
+ * Theme strategy: the server reads a `codivra-theme` cookie and stamps either
+ * `.dark` or `.light` onto <html> during SSR, so the first paint is already
+ * correct and there is no flash. Never rely on prefers-color-scheme alone here
+ * — the class is always present.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+ * Semantic tokens — dark is the default surface.
+ * ------------------------------------------------------------------------ */
+
+:root,
+.dark {
+  color-scheme: dark;
+
+  --background: #0a0a0b;
+  --surface: #141416;
+  --surface-2: #1c1c20;
+  --surface-3: #26262b;
+
+  --foreground: #fafafa;
+  --muted-foreground: #a1a1aa;
+  --subtle-foreground: #71717a;
+
+  /* Cards: 1px border at 8% white, per the brand spec. */
+  --border: rgb(255 255 255 / 0.08);
+  --border-strong: rgb(255 255 255 / 0.14);
+  --inner-glow: rgb(255 255 255 / 0.06);
+
+  --primary: #4f46e5;
+  --primary-hover: #6366f1;
+  --primary-foreground: #ffffff;
+  --violet: #7c3aed;
+
+  /* Indigo-300: the accent is only legible as *text* on dark at this lightness.
+     #4f46e5 on #0a0a0b is 3.1:1 and fails AA for body copy. */
+  --link: #a5b4fc;
+  --link-hover: #c7d2fe;
+
+  --success: #10b981;
+  --success-foreground: #052e21;
+  --warning: #f59e0b;
+  --danger: #f87171;
+
+  --ring: #818cf8;
+
+  --gradient-brand: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+  --shadow-glow: 0 0 0 1px rgb(99 102 241 / 0.25), 0 8px 40px -12px rgb(99 102 241 / 0.35);
+}
+
+.light {
+  color-scheme: light;
+
+  --background: #ffffff;
+  --surface: #f8f8fa;
+  --surface-2: #f1f1f4;
+  --surface-3: #e7e7eb;
+
+  --foreground: #0a0a0b;
+  --muted-foreground: #52525b;
+  --subtle-foreground: #71717a;
+
+  --border: rgb(10 10 11 / 0.10);
+  --border-strong: rgb(10 10 11 / 0.18);
+  --inner-glow: rgb(10 10 11 / 0.04);
+
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-foreground: #ffffff;
+  --violet: #6d28d9;
+
+  /* 5.1:1 on white — passes AA for normal text. */
+  --link: #4338ca;
+  --link-hover: #3730a3;
+
+  --success: #047857;
+  --success-foreground: #ffffff;
+  --warning: #b45309;
+  --danger: #b91c1c;
+
+  --ring: #4f46e5;
+
+  --gradient-brand: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --shadow-card: 0 1px 2px rgb(10 10 11 / 0.06), 0 8px 24px -12px rgb(10 10 11 / 0.12);
+  --shadow-glow: 0 0 0 1px rgb(79 70 229 / 0.20), 0 8px 40px -12px rgb(79 70 229 / 0.25);
+}
+
+/* ---------------------------------------------------------------------------
+ * Tailwind theme mapping
+ * ------------------------------------------------------------------------ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-violet: var(--violet);
+
+  --color-link: var(--link);
+  --color-link-hover: var(--link-hover);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+
+  /* Fluid type scale. Min values are the 360px reading size, max the 1280px. */
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: clamp(1rem, 0.97rem + 0.15vw, 1.0625rem);
+  --text-lg: clamp(1.125rem, 1.08rem + 0.22vw, 1.25rem);
+  --text-xl: clamp(1.25rem, 1.18rem + 0.35vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 1.38rem + 0.6vw, 1.875rem);
+  --text-3xl: clamp(1.875rem, 1.65rem + 1.1vw, 2.5rem);
+  --text-4xl: clamp(2.25rem, 1.85rem + 2vw, 3.25rem);
+  --text-5xl: clamp(2.75rem, 2.1rem + 3.2vw, 4.25rem);
+
+  /* 8pt spacing grid. */
+  --spacing: 0.5rem;
+
+  --radius-card: 16px;
+  --radius-lg: 12px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+
+  --container-site: 1280px;
+
+  --shadow-card: var(--shadow-card);
+  --shadow-glow: var(--shadow-glow);
+
+  --animate-marquee: marquee 60s linear infinite;
+  --animate-marquee-reverse: marquee-reverse 60s linear infinite;
+  --animate-gradient: gradient-drift 18s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes marquee-reverse {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes gradient-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.55; }
+  50%      { transform: translate3d(4%, -3%, 0) scale(1.08); opacity: 0.75; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Base layer
+ * ------------------------------------------------------------------------ */
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    /* Sticky header is 64px; keeps anchor targets from hiding underneath. */
+    scroll-padding-top: 5.5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.65;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  p, li {
+    text-wrap: pretty;
+  }
+
+  /* Visible focus ring on every interactive element — required for the
+     keyboard-only pass. Never remove without an equivalent replacement. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--primary) 40%, transparent);
+    color: var(--foreground);
+  }
+
+  /* Respect the OS setting. Framer Motion reads this too, but transitions
+     declared in CSS need their own guard. */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Reusable primitives
+ * ------------------------------------------------------------------------ */
+
+@layer components {
+  .container-site {
+    width: 100%;
+    max-width: var(--container-site);
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  @media (min-width: 768px) {
+    .container-site { padding-inline: 2rem; }
+  }
+
+  /* The card treatment from the brand spec: 1px/8% border, 16px radius,
+     soft inner glow on hover. */
+  .card-surface {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+  }
+
+  .card-surface:hover {
+    border-color: var(--border-strong);
+    box-shadow: inset 0 1px 0 0 var(--inner-glow), var(--shadow-glow);
+  }
+
+  .text-gradient-brand {
+    background-image: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Prose defaults for MDX bodies. Kept local rather than pulling in
+     @tailwindcss/typography, which ships more CSS than these pages use. */
+  .prose-codivra {
+    max-width: 72ch;
+    font-size: var(--text-base);
+    line-height: 1.75;
+    color: var(--foreground);
+  }
+  .prose-codivra > * + * { margin-top: 1.25em; }
+  .prose-codivra h2 {
+    margin-top: 2.5em;
+    margin-bottom: 0.75em;
+    font-size: var(--text-2xl);
+    scroll-margin-top: 6rem;
+  }
+  .prose-codivra h3 {
+    margin-top: 2em;
+    margin-bottom: 0.5em;
+    font-size: var(--text-xl);
+    scroll-margin-top: 6rem;
+  }
+  .prose-codivra p,
+  .prose-codivra li { color: var(--muted-foreground); }
+  .prose-codivra strong { color: var(--foreground); font-weight: 600; }
+  .prose-codivra a {
+    color: var(--link);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+  .prose-codivra a:hover { color: var(--link-hover); }
+  .prose-codivra ul { list-style: disc; padding-left: 1.5em; }
+  .prose-codivra ol { list-style: decimal; padding-left: 1.5em; }
+  .prose-codivra li + li { margin-top: 0.5em; }
+  .prose-codivra code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    background-color: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.125em 0.375em;
+  }
+  .prose-codivra pre {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    overflow-x: auto;
+  }
+  .prose-codivra pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.8125rem;
+  }
+  .prose-codivra blockquote {
+    border-left: 3px solid var(--primary);
+    padding-left: 1.25rem;
+    font-style: italic;
+    color: var(--foreground);
+  }
+  /* Tables are load-bearing on pricing and comparison pages, so they must
+     scroll inside their own container rather than widening the page. */
+  .prose-codivra .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  .prose-codivra table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+  .prose-codivra th,
+  .prose-codivra td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .prose-codivra th {
+    background-color: var(--surface-2);
+    font-weight: 600;
+    color: var(--foreground);
+    white-space: nowrap;
+  }
+  .prose-codivra tbody tr:last-child td { border-bottom: none; }
+}
+
+@layer utilities {
+  /* Pauses the tech marquee for anyone who asked for less motion. */
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track { animation: none !important; }
+  }
+
+  .mask-fade-x {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 8%,
+      black 92%,
+      transparent
+    );
+  }
+}
